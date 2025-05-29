@@ -11,3 +11,18 @@ function myThrottling(toThrottle, delay) {
     }
 
 }
+
+
+function myThrottle(func, offset){
+
+    let open = true;
+
+    return function(...args){
+        const that = this;
+        if(open){
+            func.call(that,...args);
+            open = false;
+        }
+        setTimeout(()=>open=true,offset);
+    }
+}
