@@ -19,7 +19,10 @@ function MyPromise(callback) {
   callback(resolver, rejecter);
 }
 
-MyPromise.prototype.then = function (resolveCallback, rejectCallback) {
+MyPromise.prototype.then_Incomplete = function (
+  resolveCallback,
+  rejectCallback
+) {
   return new Promise((resolve, reject) => {
     if (this.status === "resolved") {
       resolve(resolveCallback(this.data));
@@ -55,6 +58,107 @@ MyPromise.prototype.then = function (resolveCallback, rejectCallback) {
     }
   });
 };
+
+MyPromise.prototype.then = (resolveCallback, rejectCallback) => {
+  return new Promise((resolve, reject) => {
+    if (this.status === "resolved") {
+      if (resolveCallback.constructor === Function) {
+        resolve(resolveCallback(this.data));
+      } else {
+        resolve(this.data);
+      }
+    } else if (this.status === "rejected") {
+      if (rejectCallback.constructor === Function) {
+        resolve(rejectCallback(this.data));
+      } else {
+        resolve(this.data);
+      }
+    } else {
+      // status pending
+      this.resolveListeners.push((data) => {
+        if (resolveCallback.constructor === Function) {
+          const resolveCallbackValue = resolveCallback(data);
+          if (resolveCallbackValue.constructor === Promise) {
+            resolveCallbackValue.then(
+              (data) => resolve(data),
+              (error) => reject(error)
+            );
+          } else {
+            // no promise ret
+            resolve(data);
+          }
+        } else {
+          resolve(this.data);
+        }
+      });
+
+      this.rejectListeners.push((data) => {
+        if (rejectCallback.constructor === Function) {
+          const rejectCallbackValue = rejectCallback(data);
+          if (rejectCallbackValue.constructor === Promise) {
+            rejectCallbackValue.then(
+              (data) => resolve(data),
+              (error) => reject(error)
+            );
+          } else {
+            // no promise ret
+            resolve(data);
+          }
+        } else {
+          resolve(this.data);
+        }
+      });
+    }
+  });
+};
+
+MyPromise.prototype.then2 = (onFullfilled, onRejected) => {
+  return new MyPromise((resolve, reject) => {
+    const resolveCallback = (data) => {
+      try {
+        if (resCall) {
+          const result = onFullfilled(data);
+          this.resolvePromise(result, resolve, reject);
+        } else {
+          resolve(data);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    };
+    const rejectCallback = (data) => {
+      try {
+        if (rejCall) {
+          const result = onRejected(data);
+          this.resolvePromise(result, resolve, reject);
+        } else {
+          resolve(data);
+        }
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    if ((this.status = "resolved")) {
+      resolveCallback(this.data);
+    } else if ((this.status = "rejected")) {
+      rejectCallback(this.data);
+    } else {
+      this.resolveListeners.push(() => resolveCallback(this.data));
+      this.resolveListeners.push(() => rejectCallback(this.data));
+    }
+  });
+};
+
+MyPromise.prototype.resolvePromise = (data, resolve, reject) => {
+  if(data.constructor === Promise){
+    data.then(data=>resolve(data), err=> reject(err));
+  }
+  else{
+    resolve(data);
+  }
+} 
+
 
 MyPromise.all = function (promiseList) {
   const fulfilledPromises = [];
