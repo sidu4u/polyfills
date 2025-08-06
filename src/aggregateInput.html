@@ -1,0 +1,47 @@
+<!-- Input:
+<form id="parent">
+	<input type="text" name="a.c" value="1"/>
+	<input type="text" name="a.b.d" value="2"/>
+  <input type="text" name="a.b.e" value="3"/>
+</form>
+
+Output:
+{
+  "a": {
+    "c": "1",
+    "b": {
+      "d": "2",
+      "e": "3"
+    }
+  }
+} -->
+
+<form id="parent">
+	<input type="text" name="a.c" value="1"/>
+	<input type="text" name="a.b.d" value="2"/>
+    <input type="text" name="a.b.e" value="3"/>
+</form>
+
+
+<script>
+
+
+const addPathValue = (path, source, value) => {
+    const pathArr = path.split('.')
+    for(let i=0;i<pathArr.length-1;i++){
+        const key = pathArr[i];
+        if(!source.hasOwnProperty(key)){
+            source[key] = {};
+        }
+        source = source[key];
+    }
+    source[pathArr[pathArr.length-1]] = value;
+}
+
+const data = Array.from(document.querySelectorAll("input[type='text']")).reduce((acc,ele)=>{
+    addPathValue(ele.name,acc,ele.value);
+    return acc;
+}, {});
+
+console.log(data);
+</script>
