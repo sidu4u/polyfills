@@ -62,12 +62,12 @@ class SDK {
   logEvent(event) {
     this.events.push(event);
   }
-  
+
   async send() {
     this.count = 0;
-    while (this.events.length>0) {
+    while (this.events.length > 0) {
       try {
-          await this.sendEvent();
+        await this.sendEvent();
       } catch (e) {
         console.log("Failed to send ", this.events[0]);
         await this.retry(this.events[0]);
@@ -78,8 +78,50 @@ class SDK {
   }
 }
 
+
+
+class SDK2 {
+  constructor() {
+    this.eventQueue = [];
+  }
+
+  sendEvent(name, fail) {
+    return new Promise((res, rej) =>
+      setTimeout(() => {
+        if (fail) {
+          rej(name);
+        } else {
+          res(name);
+        }
+      }, 1000)
+    );
+  }
+
+  logEvent(name) {
+    this.eventQueue.push(name);
+  }
+
+  async send() {
+    let count = 1,
+      eventName;
+
+    while (this.eventQueue.length > 0) {
+      try {
+        eventName = await this.sendEvent(this.eventQueue[0], count % 5 === 0);
+        count++;
+        this.eventQueue.shift();
+        console.log("send event", eventName);
+      } catch (e) {
+        console.log("retrying", eventName);
+        count = 1;
+      }
+    }
+  }
+}
+
+
 //Input:
-const sdk = new SDK();
+const sdk = new SDK2();
 
 sdk.logEvent("event 1");
 sdk.logEvent("event 2");
